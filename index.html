@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>UTM Builder</title>
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --panel: #ffffff;
+    --text: #202124;
+    --muted: #68707c;
+    --line: #dfe3e8;
+    --strong: #111827;
+    --danger: #b42318;
+    --success: #067647;
+    --soft: #f1f3f5;
+    --shadow: 0 12px 30px rgba(17, 24, 39, 0.08);
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .app-shell {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 32px 20px 56px;
+  }
+
+  .hero {
+    display: flex;
+    gap: 24px;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+
+  .hero h1 {
+    margin: 0 0 6px;
+    font-size: clamp(28px, 4vw, 42px);
+    letter-spacing: -0.03em;
+  }
+
+  .hero p {
+    margin: 0;
+    color: var(--muted);
+    max-width: 650px;
+    line-height: 1.5;
+  }
+
+  .progress {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 20px 0 24px;
+  }
+
+  .progress-step {
+    padding: 10px 12px;
+    border-radius: 999px;
+    background: #e9edf1;
+    color: var(--muted);
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .progress-step.active,
+  .progress-step.done {
+    background: var(--strong);
+    color: white;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 22px;
+    margin-bottom: 18px;
+  }
+
+  .card h2 {
+    margin: 0 0 18px;
+    font-size: 20px;
+    letter-spacing: -0.015em;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .field.full { grid-column: 1 / -1; }
+
+  label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  input, select, button {
+    font: inherit;
+  }
+
+  input, select {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid #cfd5dc;
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: white;
+    color: var(--text);
+    outline: none;
+  }
+
+  input:focus, select:focus {
+    border-color: #667085;
+    box-shadow: 0 0 0 3px rgba(102,112,133,.12);
+  }
+
+  .hint, .error, .char-count {
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .hint, .char-count { color: var(--muted); }
+  .error { color: var(--danger); font-weight: 700; }
+  .char-count.over { color: var(--danger); font-weight: 800; }
+
+  .readout {
+    margin-top: 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--soft);
+    padding: 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    word-break: break-all;
+    line-height: 1.5;
+  }
+
+  .readout-wrap {
+    position: relative;
+  }
+
+  .inline-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+
+  button {
+    min-height: 42px;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-weight: 800;
+  }
+
+  .primary {
+    background: var(--strong);
+    color: white;
+  }
+
+  .secondary {
+    background: #e9edf1;
+    color: var(--strong);
+  }
+
+  .ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--line);
+  }
+
+  button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+  }
+
+  .hidden { display: none !important; }
+
+  .status {
+    margin-top: 10px;
+    min-height: 20px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .status.ok { color: var(--success); }
+  .status.bad { color: var(--danger); }
+
+  .summary {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: start;
+  }
+
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+    margin-bottom: 7px;
+  }
+
+  @media (max-width: 720px) {
+    .grid { grid-template-columns: 1fr; }
+    .field.full { grid-column: auto; }
+    .hero { display: block; }
+    .progress { grid-template-columns: 1fr 1fr; }
+    .summary { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <div class="hero">
+    <div>
+      <div class="eyebrow">Campaign naming + tracking</div>
+      <h1>UTM Builder</h1>
+      <p>Build a validated campaign name and final tracking URL step by step. Each section unlocks only when the required inputs are valid.</p>
+    </div>
+    <button class="ghost" id="resetBtn" type="button">Reset</button>
+  </div>
+
+  <div class="progress" aria-label="Progress">
+    <div class="progress-step active" data-step="1">1 · Campaign</div>
+    <div class="progress-step" data-step="2">2 · Form Gate</div>
+    <div class="progress-step" data-step="3">3 · Campaign String</div>
+    <div class="progress-step" data-step="4">4 · UTM</div>
+  </div>
+
+  <section class="card" id="step1">
+    <h2>Step 1: Campaign Base</h2>
+    <div class="grid">
+      <div class="field">
+        <label for="vertical">Vertical</label>
+        <select id="vertical"></select>
+      </div>
+
+      <div class="field">
+        <label for="phrase">Campaign Phrase</label>
+        <input type="text" id="phrase" placeholder="e.g. summer-launch" autocomplete="off" />
+        <div class="hint">Maximum 4 words, lowercase, hyphenated.</div>
+        <div class="error" id="phraseError"></div>
+      </div>
+
+      <div class="field">
+        <label for="funnel">Funnel Layer</label>
+        <select id="funnel">
+          <option value="tofu">ToFu</option>
+          <option value="mofu">MoFu</option>
+          <option value="bofu">BoFu</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="platform">Platform</label>
+        <select id="platform"></select>
+      </div>
+
+      <div class="field full">
+        <label for="tactic">Tactic</label>
+        <select id="tactic"></select>
+      </div>
+    </div>
+
+    <div class="readout" id="baseReadout">Campaign base will appear here</div>
+    <div class="char-count" id="baseCharCount"></div>
+  </section>
+
+  <section class="card hidden" id="step2">
+    <h2>Step 2: Form Gate</h2>
+
+    <div class="field">
+      <label for="hasForm">Does the destination URL contain a form?</label>
+      <select id="hasForm">
+        <option value="">-- select --</option>
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+      </select>
+    </div>
+
+    <div id="sfdcWrap" class="field hidden" style="margin-top:16px;">
+      <label for="sfdcId">SFDC Campaign ID</label>
+      <input type="text" id="sfdcId" placeholder="Paste SFDC ID" autocomplete="off" />
+      <div class="hint">Required when the destination contains a form.</div>
+      <div class="error" id="sfdcError"></div>
+    </div>
+  </section>
+
+  <section class="card hidden" id="step3">
+    <h2>Step 3: Full Campaign String</h2>
+    <div class="grid">
+      <div class="field">
+        <label for="assetType">Asset Type</label>
+        <select id="assetType"></select>
+      </div>
+
+      <div class="field">
+        <label for="geo">Geo Targeting</label>
+        <select id="geo"></select>
+      </div>
+    </div>
+
+    <div class="summary">
+      <div>
+        <div class="readout" id="fullCampaignReadout">Full campaign string will appear here</div>
+      </div>
+      <button class="secondary hidden" id="copyCampaignBtn" type="button">Copy</button>
+    </div>
+  </section>
+
+  <section class="card hidden" id="step4">
+    <h2>Step 4: UTM Parameters</h2>
+
+    <div class="grid">
+      <div class="field full">
+        <label for="destinationUrl">Destination URL</label>
+        <input type="url" id="destinationUrl" placeholder="https://example.com/page" />
+        <div class="error" id="urlError"></div>
+      </div>
+
+      <div class="field">
+        <label for="medium">Medium</label>
+        <select id="medium"></select>
+      </div>
+
+      <div class="field">
+        <label for="source">Source</label>
+        <select id="source"></select>
+      </div>
+
+      <div class="field hidden" id="otherSourceWrap">
+        <label for="otherSource">Custom Source</label>
+        <input type="text" id="otherSource" placeholder="e.g. partner-x" autocomplete="off" />
+        <div class="hint">Maximum 2 words, lowercase, hyphenated.</div>
+        <div class="error" id="otherSourceError"></div>
+      </div>
+
+      <div class="field full">
+        <label for="content">Content <span style="font-weight:500;color:var(--muted)">(optional)</span></label>
+        <input type="text" id="content" placeholder="e.g. blue-banner-v2" autocomplete="off" />
+        <div class="hint">Maximum 5 words, lowercase, hyphenated.</div>
+        <div class="error" id="contentError"></div>
+      </div>
+    </div>
+
+    <div class="inline-actions">
+      <button class="primary" id="generateBtn" type="button">Generate Final UTM</button>
+    </div>
+
+    <div id="resultWrap" class="hidden">
+      <div class="readout" id="finalReadout"></div>
+      <div class="inline-actions">
+        <button class="secondary" id="copyUrlBtn" type="button">Copy final URL</button>
+        <button class="primary" id="submitBtn" type="button">Save to Google Sheet</button>
+      </div>
+      <div class="status" id="submitStatus"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8jMlxYrZG33i69EVUFhm50D76EESKK4EazMQtw_n3hXbDjGkZR41iTsZpawZtX7ETUw/exec";
+
+const VERTICALS = ["finserv","manufacturing","pub_sec","teleco","brand","ecom-smb","ecom-consumer","cross-industry","developerts"];
+const TACTICS = ["webinar","download","handraiser","purchase","lead-gen","event","organic","influencer","engagement","newsletter","blog"];
+const PLATFORMS = ["ga","li","fb","ba","rd","x","gpt"];
+const ASSET_TYPES = ["video","images","search","carousel","conversation","doc","deman-gen","message","display","max-ai","pmax"];
+const GEOS = ["global","nam","emea","apj","latam"];
+const MEDIUMS = ["cpc","paid-social","print","display","events","referral","social","email","video","website","webinar"];
+const SOURCES = ["facebook","google","microsoft","instagram","x","direct-mail","linkedin","marketo"];
+
+let campaignBase = "";
+let fullCampaign = "";
+let currentFinalUrl = "";
+
+function $(id) { return document.getElementById(id); }
+
+function fillSelect(id, values, addOtherOption = false) {
+  const el = $(id);
+  el.innerHTML = '<option value="">-- select --</option>';
+  values.forEach(v => {
+    const opt = document.createElement("option");
+    opt.value = v;
+    opt.textContent = v;
+    el.appendChild(opt);
+  });
+  if (addOtherOption) {
+    const opt = document.createElement("option");
+    opt.value = "other";
+    opt.textContent = "Other";
+    el.appendChild(opt);
+  }
+}
+
+fillSelect("vertical", VERTICALS);
+fillSelect("tactic", TACTICS);
+fillSelect("platform", PLATFORMS);
+fillSelect("assetType", ASSET_TYPES);
+fillSelect("geo", GEOS);
+fillSelect("medium", MEDIUMS);
+fillSelect("source", SOURCES, true);
+
+function isValidPhrase(str, maxWords, optional = false) {
+  if (!str) return optional;
+  if (str !== str.toLowerCase()) return false;
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(str)) return false;
+  return str.split("-").length <= maxWords;
+}
+
+function setStepState(stepNum) {
+  document.querySelectorAll(".progress-step").forEach(el => {
+    const n = Number(el.dataset.step);
+    el.classList.toggle("done", n < stepNum);
+    el.classList.toggle("active", n === stepNum);
+  });
+}
+
+function hideFrom(stepNum) {
+  for (let n = stepNum; n <= 4; n++) {
+    const el = $("step" + n);
+    if (el) el.classList.add("hidden");
+  }
+  if (stepNum <= 3) {
+    fullCampaign = "";
+    $("fullCampaignReadout").textContent = "Full campaign string will appear here";
+    $("copyCampaignBtn").classList.add("hidden");
+  }
+  if (stepNum <= 4) clearFinalResult();
+}
+
+function updateBase() {
+  const vertical = $("vertical").value;
+  const phrase = $("phrase").value.trim();
+  const funnel = $("funnel").value;
+  const platform = $("platform").value;
+  const tactic = $("tactic").value;
+
+  if (phrase && !isValidPhrase(phrase, 4)) {
+    $("phraseError").textContent = "Use up to 4 lowercase words separated only by hyphens.";
+  } else {
+    $("phraseError").textContent = "";
+  }
+
+  const complete = vertical && phrase && isValidPhrase(phrase, 4) && funnel && platform && tactic;
+
+  if (!complete) {
+    campaignBase = "";
+    $("baseReadout").textContent = "Campaign base will appear here";
+    $("baseCharCount").textContent = "";
+    hideFrom(2);
+    setStepState(1);
+    return;
+  }
+
+  campaignBase = `${vertical}-${phrase}-${funnel}-${platform}-${tactic}`;
+  $("baseReadout").textContent = campaignBase;
+  $("baseCharCount").textContent = `${campaignBase.length} / 64 characters`;
+
+  if (campaignBase.length > 64) {
+    $("baseCharCount").classList.add("over");
+    $("baseCharCount").textContent += " — OVER LIMIT";
+    campaignBase = "";
+    hideFrom(2);
+    setStepState(1);
+    return;
+  }
+
+  $("baseCharCount").classList.remove("over");
+  $("step2").classList.remove("hidden");
+  setStepState(2);
+
+  // Changing step 1 invalidates downstream values until reconfirmed.
+  updateFormGate();
+}
+
+["vertical","phrase","funnel","platform","tactic"].forEach(id => {
+  $(id).addEventListener("input", updateBase);
+});
+
+function updateFormGate() {
+  if (!campaignBase) return;
+
+  const hasForm = $("hasForm").value;
+  const sfdcId = $("sfdcId").value.trim();
+
+  $("sfdcWrap").classList.toggle("hidden", hasForm !== "yes");
+
+  if (!hasForm) {
+    $("sfdcError").textContent = "";
+    hideFrom(3);
+    setStepState(2);
+    return;
+  }
+
+  if (hasForm === "yes" && !sfdcId) {
+    $("sfdcError").textContent = "SFDC ID is required because this URL has a form.";
+    hideFrom(3);
+    setStepState(2);
+    return;
+  }
+
+  $("sfdcError").textContent = "";
+  $("step3").classList.remove("hidden");
+  setStepState(3);
+  updateFullCampaign();
+}
+
+$("hasForm").addEventListener("change", updateFormGate);
+$("sfdcId").addEventListener("input", updateFormGate);
+
+function updateFullCampaign() {
+  const assetType = $("assetType").value;
+  const geo = $("geo").value;
+  const hasForm = $("hasForm").value;
+  const sfdcId = $("sfdcId").value.trim();
+
+  if (!campaignBase || !assetType || !geo) {
+    fullCampaign = "";
+    $("fullCampaignReadout").textContent = "Full campaign string will appear here";
+    $("copyCampaignBtn").classList.add("hidden");
+    hideFrom(4);
+    setStepState(3);
+    return;
+  }
+
+  if (hasForm === "yes" && !sfdcId) return;
+
+  const parts = [campaignBase];
+  if (hasForm === "yes") parts.push(sfdcId);
+  parts.push(assetType, geo);
+  fullCampaign = parts.join("-");
+
+  $("fullCampaignReadout").textContent = fullCampaign;
+  $("copyCampaignBtn").classList.remove("hidden");
+  $("step4").classList.remove("hidden");
+  setStepState(4);
+  clearFinalResult();
+}
+
+["assetType","geo"].forEach(id => $(id).addEventListener("change", updateFullCampaign));
+
+$("source").addEventListener("change", function() {
+  $("otherSourceWrap").classList.toggle("hidden", this.value !== "other");
+  $("otherSourceError").textContent = "";
+  clearFinalResult();
+});
+
+["destinationUrl","medium","otherSource","content"].forEach(id => {
+  $(id).addEventListener("input", clearFinalResult);
+});
+$("medium").addEventListener("change", clearFinalResult);
+
+function clearFinalResult() {
+  currentFinalUrl = "";
+  $("resultWrap").classList.add("hidden");
+  $("finalReadout").textContent = "";
+  $("submitStatus").textContent = "";
+  $("submitStatus").className = "status";
+}
+
+function validHttpUrl(value) {
+  try {
+    const u = new URL(value);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+$("generateBtn").addEventListener("click", function() {
+  const destinationUrl = $("destinationUrl").value.trim();
+  const medium = $("medium").value;
+  let source = $("source").value;
+  const otherSource = $("otherSource").value.trim();
+  const content = $("content").value.trim();
+
+  let valid = true;
+
+  if (!validHttpUrl(destinationUrl)) {
+    $("urlError").textContent = "Enter a complete URL beginning with http:// or https://.";
+    valid = false;
+  } else {
+    $("urlError").textContent = "";
+  }
+
+  if (source === "other") {
+    if (!isValidPhrase(otherSource, 2)) {
+      $("otherSourceError").textContent = "Use up to 2 lowercase words separated by a hyphen.";
+      valid = false;
+    } else {
+      $("otherSourceError").textContent = "";
+      source = otherSource;
+    }
+  } else {
+    $("otherSourceError").textContent = "";
+  }
+
+  if (!isValidPhrase(content, 5, true)) {
+    $("contentError").textContent = "Use up to 5 lowercase words separated by hyphens.";
+    valid = false;
+  } else {
+    $("contentError").textContent = "";
+  }
+
+  if (!medium || !source || !fullCampaign) valid = false;
+
+  if (!valid) {
+    $("submitStatus").textContent = "Complete the required fields before generating.";
+    $("submitStatus").className = "status bad";
+    return;
+  }
+
+  const url = new URL(destinationUrl);
+  url.searchParams.set("utm_source", source);
+  url.searchParams.set("utm_medium", medium);
+  url.searchParams.set("utm_campaign", fullCampaign);
+  if (content) url.searchParams.set("utm_content", content);
+  else url.searchParams.delete("utm_content");
+
+  currentFinalUrl = url.toString();
+  $("finalReadout").textContent = currentFinalUrl;
+  $("resultWrap").classList.remove("hidden");
+  $("submitStatus").textContent = "";
+  $("submitStatus").className = "status";
+
+  $("submitBtn").dataset.payload = JSON.stringify({
+    vertical: $("vertical").value,
+    phrase: $("phrase").value.trim(),
+    funnel: $("funnel").value,
+    platform: $("platform").value,
+    tactic: $("tactic").value,
+    campaignBase,
+    formOnUrl: $("hasForm").value,
+    sfdcId: $("sfdcId").value.trim(),
+    assetType: $("assetType").value,
+    geo: $("geo").value,
+    fullCampaign,
+    utmMedium: medium,
+    utmSource: source,
+    utmContent: content,
+    destinationUrl,
+    finalUrl: currentFinalUrl
+  });
+});
+
+async function copyText(text, button) {
+  try {
+    await navigator.clipboard.writeText(text);
+    const old = button.textContent;
+    button.textContent = "Copied";
+    setTimeout(() => button.textContent = old, 1200);
+  } catch {
+    // Fallback for environments where Clipboard API is unavailable.
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+  }
+}
+
+$("copyCampaignBtn").addEventListener("click", function() {
+  if (fullCampaign) copyText(fullCampaign, this);
+});
+
+$("copyUrlBtn").addEventListener("click", function() {
+  if (currentFinalUrl) copyText(currentFinalUrl, this);
+});
+
+$("submitBtn").addEventListener("click", function() {
+  const payload = this.dataset.payload;
+  const status = $("submitStatus");
+
+  if (!payload) return;
+
+  status.textContent = "Saving…";
+  status.className = "status";
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: payload
+  })
+  .then(response => {
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    status.textContent = "Saved to Google Sheet.";
+    status.className = "status ok";
+  })
+  .catch(() => {
+    status.textContent = "Could not save. Check the Apps Script deployment and permissions.";
+    status.className = "status bad";
+  });
+});
+
+$("resetBtn").addEventListener("click", function() {
+  document.querySelectorAll("input").forEach(el => el.value = "");
+  document.querySelectorAll("select").forEach(el => {
+    if (el.id === "funnel") el.value = "tofu";
+    else el.value = "";
+  });
+
+  campaignBase = "";
+  fullCampaign = "";
+  currentFinalUrl = "";
+
+  $("phraseError").textContent = "";
+  $("sfdcError").textContent = "";
+  $("otherSourceError").textContent = "";
+  $("contentError").textContent = "";
+  $("urlError").textContent = "";
+
+  $("baseReadout").textContent = "Campaign base will appear here";
+  $("baseCharCount").textContent = "";
+  $("fullCampaignReadout").textContent = "Full campaign string will appear here";
+  $("copyCampaignBtn").classList.add("hidden");
+  $("sfdcWrap").classList.add("hidden");
+  hideFrom(2);
+  setStepState(1);
+});
+</script>
+</body>
+</html>

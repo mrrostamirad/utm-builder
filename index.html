@@ -257,7 +257,7 @@
       <div class="field">
         <label for="phrase">Campaign Phrase</label>
         <input type="text" id="phrase" placeholder="e.g. summer-launch" autocomplete="off" />
-        <div class="hint">Maximum 4 words, lowercase, hyphenated.</div>
+        <div class="hint">Maximum 4 words. Formatting is applied automatically.</div>
         <div class="error" id="phraseError"></div>
       </div>
 
@@ -350,14 +350,14 @@
       <div class="field hidden" id="otherSourceWrap">
         <label for="otherSource">Custom Source</label>
         <input type="text" id="otherSource" placeholder="e.g. partner-x" autocomplete="off" />
-        <div class="hint">Maximum 2 words, lowercase, hyphenated.</div>
+        <div class="hint">Maximum 2 words. Formatting is applied automatically.</div>
         <div class="error" id="otherSourceError"></div>
       </div>
 
       <div class="field full">
         <label for="content">Content <span style="font-weight:500;color:var(--muted)">(optional)</span></label>
         <input type="text" id="content" placeholder="e.g. blue-banner-v2" autocomplete="off" />
-        <div class="hint">Maximum 5 words, lowercase, hyphenated.</div>
+        <div class="hint">Maximum 5 words. Formatting is applied automatically.</div>
         <div class="error" id="contentError"></div>
       </div>
     </div>
@@ -420,11 +420,22 @@ fillSelect("medium", []);
 fillSelect("source", SOURCES);
 updateMediumOptions();
 
+function normalizeFreeText(str) {
+  return str
+    .trim()
+    .toLowerCase()
+    .replace(/[_]+/g, " ")
+    .replace(/[^a-z0-9\s-]+/g, " ")
+    .replace(/-+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\s+/g, "-");
+}
+
 function isValidPhrase(str, maxWords, optional = false) {
-  if (!str) return optional;
-  if (str !== str.toLowerCase()) return false;
-  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(str)) return false;
-  return str.split("-").length <= maxWords;
+  const normalized = normalizeFreeText(str);
+  if (!normalized) return optional;
+  return normalized.split("-").length <= maxWords;
 }
 
 function setStepState(stepNum) {
@@ -450,13 +461,14 @@ function hideFrom(stepNum) {
 
 function updateBase() {
   const vertical = $("vertical").value;
-  const phrase = $("phrase").value.trim();
+  const phraseRaw = $("phrase").value;
+  const phrase = normalizeFreeText(phraseRaw);
   const funnel = $("funnel").value;
   const platform = $("platform").value;
   const tactic = $("tactic").value;
 
   if (phrase && !isValidPhrase(phrase, 4)) {
-    $("phraseError").textContent = "Use up to 4 lowercase words separated only by hyphens.";
+    $("phraseError").textContent = "Use up to 4 words. Lowercase and hyphens are applied automatically.";
   } else {
     $("phraseError").textContent = "";
   }
@@ -495,6 +507,12 @@ function updateBase() {
 
 ["vertical","phrase","funnel","platform","tactic"].forEach(id => {
   $(id).addEventListener("input", updateBase);
+});
+
+$("phrase").addEventListener("blur", function() {
+  const normalized = normalizeFreeText(this.value);
+  if (normalized && isValidPhrase(normalized, 4)) this.value = normalized;
+  updateBase();
 });
 
 function updateFormGate() {
@@ -580,6 +598,12 @@ $("source").addEventListener("change", function() {
   updateMediumOptions();
 });
 
+$("content").addEventListener("blur", function() {
+  const normalized = normalizeFreeText(this.value);
+  if (!normalized || isValidPhrase(normalized, 5, true)) this.value = normalized;
+  clearFinalResult();
+});
+
 ["destinationUrl","medium","otherSource","content"].forEach(id => {
   $(id).addEventListener("input", clearFinalResult);
 });
@@ -606,8 +630,9 @@ $("generateBtn").addEventListener("click", function() {
   const destinationUrl = $("destinationUrl").value.trim();
   const medium = $("medium").value;
   let source = $("source").value;
-  const otherSource = $("otherSource").value.trim();
-  const content = $("content").value.trim();
+  const otherSource = normalizeFreeText($("otherSource").value);
+  const contentRaw = $("content").value;
+  const content = normalizeFreeText(contentRaw);
 
   let valid = true;
 
@@ -620,7 +645,7 @@ $("generateBtn").addEventListener("click", function() {
 
   if (source === "other") {
     if (!isValidPhrase(otherSource, 2)) {
-      $("otherSourceError").textContent = "Use up to 2 lowercase words separated by a hyphen.";
+      $("otherSourceError").textContent = "Use up to 2 words. Lowercase and hyphens are applied automatically.";
       valid = false;
     } else {
       $("otherSourceError").textContent = "";
@@ -631,7 +656,7 @@ $("generateBtn").addEventListener("click", function() {
   }
 
   if (!isValidPhrase(content, 5, true)) {
-    $("contentError").textContent = "Use up to 5 lowercase words separated by hyphens.";
+    $("contentError").textContent = "Use up to 5 words. Lowercase and hyphens are applied automatically.";
     valid = false;
   } else {
     $("contentError").textContent = "";
@@ -660,7 +685,7 @@ $("generateBtn").addEventListener("click", function() {
 
   $("submitBtn").dataset.payload = JSON.stringify({
     vertical: $("vertical").value,
-    phrase: $("phrase").value.trim(),
+    phrase: normalizeFreeText($("phrase").value),
     funnel: $("funnel").value,
     platform: $("platform").value,
     tactic: $("tactic").value,

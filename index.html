@@ -484,7 +484,7 @@ function updateBase() {
     return;
   }
 
-  campaignBase = `${vertical}-${phrase}-${funnel}-${platform}-${tactic}`;
+  campaignBase = `${vertical}_${phrase}-${funnel}-${platform}_${tactic}`;
   $("baseReadout").textContent = campaignBase;
   $("baseCharCount").textContent = `${campaignBase.length} / 64 characters`;
 
@@ -537,6 +537,13 @@ function updateFormGate() {
     return;
   }
 
+  if (hasForm === "yes" && /\s/.test(sfdcId)) {
+    $("sfdcError").textContent = "SFDC Campaign ID cannot contain spaces.";
+    hideFrom(3);
+    setStepState(2);
+    return;
+  }
+
   $("sfdcError").textContent = "";
   $("step3").classList.remove("hidden");
   setStepState(3);
@@ -561,12 +568,12 @@ function updateFullCampaign() {
     return;
   }
 
-  if (hasForm === "yes" && !sfdcId) return;
+  if (hasForm === "yes" && (!sfdcId || /\s/.test(sfdcId))) return;
 
   const parts = [campaignBase];
   if (hasForm === "yes") parts.push(sfdcId);
   parts.push(assetType, geo);
-  fullCampaign = parts.join("-");
+  fullCampaign = parts.join("_");
 
   $("fullCampaignReadout").textContent = fullCampaign;
   $("copyCampaignBtn").classList.remove("hidden");

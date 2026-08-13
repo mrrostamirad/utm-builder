@@ -554,12 +554,14 @@ $("hasForm").addEventListener("change", updateFormGate);
 $("sfdcId").addEventListener("input", updateFormGate);
 
 function updateFullCampaign() {
+  const tactic = $("tactic").value;
   const assetType = $("assetType").value;
   const geo = $("geo").value;
   const hasForm = $("hasForm").value;
   const sfdcId = $("sfdcId").value.trim();
+  const assetTypeRequired = tactic !== "organic";
 
-  if (!campaignBase || !assetType || !geo) {
+  if (!campaignBase || (assetTypeRequired && !assetType) || !geo) {
     fullCampaign = "";
     $("fullCampaignReadout").textContent = "Full campaign string will appear here";
     $("copyCampaignBtn").classList.add("hidden");
@@ -572,7 +574,8 @@ function updateFullCampaign() {
 
   const parts = [campaignBase];
   if (hasForm === "yes") parts.push(sfdcId);
-  parts.push(assetType, geo);
+  if (assetType) parts.push(assetType);
+  parts.push(geo);
   fullCampaign = parts.join("_");
 
   $("fullCampaignReadout").textContent = fullCampaign;

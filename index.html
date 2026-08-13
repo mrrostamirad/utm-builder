@@ -378,15 +378,15 @@
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8jMlxYrZG33i69EVUFhm50D76EESKK4EazMQtw_n3hXbDjGkZR41iTsZpawZtX7ETUw/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4Ja130fXUEUtROS1goDwT4iwACkunRsVxrNCqzKNs_fpgI52Ovy3BIt7Y6pF1MMi6Jw/exec";
 
 const VERTICALS = ["finserv","manufacturing","pub_sec","teleco","brand","ecom-smb","ecom-consumer","cross-industry","developerts"];
 const TACTICS = ["webinar","download","handraiser","purchase","lead-gen","event","organic","influencer","engagement","newsletter","blog"];
 const PLATFORMS = ["ga","li","fb","ba","rd","x","gpt"];
 const ASSET_TYPES = ["video","images","search","carousel","conversation","doc","deman-gen","message","display","max-ai","pmax"];
 const GEOS = ["global","nam","emea","apj","latam"];
-const MEDIUMS = ["cpc","paid-social","print","display","events","referral","social","email","video","website","webinar"];
-const SOURCES = ["facebook","google","microsoft","instagram","x","direct-mail","linkedin","marketo"];
+const MEDIUMS = ["cpc","organic","paid-social","social"];
+const SOURCES = ["google","bing","facebook","linkedin","reddit","openai","x"];
 
 let campaignBase = "";
 let fullCampaign = "";
@@ -416,8 +416,9 @@ fillSelect("tactic", TACTICS);
 fillSelect("platform", PLATFORMS);
 fillSelect("assetType", ASSET_TYPES);
 fillSelect("geo", GEOS);
-fillSelect("medium", MEDIUMS);
-fillSelect("source", SOURCES, true);
+fillSelect("medium", []);
+fillSelect("source", SOURCES);
+updateMediumOptions();
 
 function isValidPhrase(str, maxWords, optional = false) {
   if (!str) return optional;
@@ -558,10 +559,25 @@ function updateFullCampaign() {
 
 ["assetType","geo"].forEach(id => $(id).addEventListener("change", updateFullCampaign));
 
-$("source").addEventListener("change", function() {
-  $("otherSourceWrap").classList.toggle("hidden", this.value !== "other");
-  $("otherSourceError").textContent = "";
+function updateMediumOptions() {
+  const source = $("source").value;
+  let allowed = [];
+
+  if (["google","bing"].includes(source)) {
+    allowed = ["cpc","organic"];
+  } else if (["facebook","linkedin","reddit","openai","x"].includes(source)) {
+    allowed = ["paid-social","social"];
+  }
+
+  fillSelect("medium", allowed);
   clearFinalResult();
+}
+
+$("source").addEventListener("change", function() {
+  $("otherSourceWrap").classList.add("hidden");
+  $("otherSource").value = "";
+  $("otherSourceError").textContent = "";
+  updateMediumOptions();
 });
 
 ["destinationUrl","medium","otherSource","content"].forEach(id => {
@@ -654,6 +670,7 @@ $("generateBtn").addEventListener("click", function() {
     assetType: $("assetType").value,
     geo: $("geo").value,
     fullCampaign,
+    finalCampaign: fullCampaign,
     utmMedium: medium,
     utmSource: source,
     utmContent: content,
@@ -734,6 +751,7 @@ $("resetBtn").addEventListener("click", function() {
   $("fullCampaignReadout").textContent = "Full campaign string will appear here";
   $("copyCampaignBtn").classList.add("hidden");
   $("sfdcWrap").classList.add("hidden");
+  updateMediumOptions();
   hideFrom(2);
   setStepState(1);
 });

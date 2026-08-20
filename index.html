@@ -380,13 +380,13 @@
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4Ja130fXUEUtROS1goDwT4iwACkunRsVxrNCqzKNs_fpgI52Ovy3BIt7Y6pF1MMi6Jw/exec";
 
-const VERTICALS = ["finserv","manufacturing","pub_sec","teleco","brand","ecom-smb","ecom-consumer","cross-industry","developerts"];
+const VERTICALS = ["finserv","manufacturing","pub_sec","teleco","brand","ecom-smb","ecom-consumer","cross-industry","developers"];
 const TACTICS = ["webinar","download","handraiser","purchase","lead-gen","event","organic","influencer","engagement","newsletter","blog"];
 const PLATFORMS = ["ga","li","fb","ba","rd","x","gpt"];
 const ASSET_TYPES = ["video","images","search","carousel","conversation","doc","deman-gen","message","display","max-ai","pmax"];
 const GEOS = ["global","nam","emea","apj","latam"];
 const MEDIUMS = ["cpc","organic","paid-social","social"];
-const SOURCES = ["google","bing","facebook","linkedin","reddit","openai","x"];
+const SOURCES = ["google","bing","facebook","linkedin","reddit","openai","x","advocacy"];
 
 let campaignBase = "";
 let fullCampaign = "";
@@ -594,7 +594,7 @@ function updateMediumOptions() {
 
   if (["google","bing"].includes(source)) {
     allowed = ["cpc","organic"];
-  } else if (["facebook","linkedin","reddit","openai","x"].includes(source)) {
+  } else if (["facebook","linkedin","reddit","openai","x","advocacy"].includes(source)) {
     allowed = ["paid-social","social"];
   }
 

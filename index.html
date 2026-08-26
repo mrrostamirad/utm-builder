@@ -311,6 +311,7 @@
       <div class="field">
         <label for="assetType">Asset Type</label>
         <select id="assetType"></select>
+        <div class="hint">Choose "none" when Asset Type does not apply. It will be omitted from the campaign name.</div>
       </div>
 
       <div class="field">
@@ -383,10 +384,10 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4Ja130fXUEUtROS1go
 const VERTICALS = ["finserv","manufacturing","pub_sec","teleco","brand","ecom-smb","ecom-consumer","cross-industry","developers"];
 const TACTICS = ["webinar","download","handraiser","purchase","lead-gen","event","organic","influencer","engagement","newsletter","blog"];
 const PLATFORMS = ["ga","li","fb","ba","rd","x","gpt"];
-const ASSET_TYPES = ["video","images","search","carousel","conversation","doc","deman-gen","message","display","max-ai","pmax"];
+const ASSET_TYPES = ["none","video","images","search","carousel","conversation","doc","deman-gen","message","display","max-ai","pmax"];
 const GEOS = ["global","nam","emea","apj","latam"];
-const MEDIUMS = ["cpc","organic","paid-social","social"];
-const SOURCES = ["google","bing","facebook","linkedin","reddit","openai","x","advocacy"];
+const MEDIUMS = ["cpc","organic","paid-social","social","email","referral"];
+const SOURCES = ["google","bing","facebook","linkedin","reddit","openai","x","advocacy","marketo","others"];
 
 let campaignBase = "";
 let fullCampaign = "";
@@ -561,6 +562,7 @@ function updateFullCampaign() {
   const hasForm = $("hasForm").value;
   const sfdcId = $("sfdcId").value.trim();
   const assetTypeRequired = tactic !== "organic";
+  const assetTypeSelected = assetType && assetType !== "none";
 
   if (!campaignBase || (assetTypeRequired && !assetType) || !geo) {
     fullCampaign = "";
@@ -575,7 +577,7 @@ function updateFullCampaign() {
 
   const parts = [campaignBase];
   if (hasForm === "yes") parts.push(sfdcId);
-  if (assetType) parts.push(assetType);
+  if (assetTypeSelected) parts.push(assetType);
   parts.push(geo);
   fullCampaign = parts.join("_");
 
@@ -596,6 +598,10 @@ function updateMediumOptions() {
     allowed = ["cpc","organic"];
   } else if (["facebook","linkedin","reddit","openai","x","advocacy"].includes(source)) {
     allowed = ["paid-social","social"];
+  } else if (source === "marketo") {
+    allowed = ["email"];
+  } else if (source === "others") {
+    allowed = ["referral"];
   }
 
   fillSelect("medium", allowed);
@@ -603,10 +609,30 @@ function updateMediumOptions() {
 }
 
 $("source").addEventListener("change", function() {
-  $("otherSourceWrap").classList.add("hidden");
+  const isOthers = this.value === "others";
+  $("otherSourceWrap").classList.toggle("hidden", !isOthers);
   $("otherSource").value = "";
   $("otherSourceError").textContent = "";
   updateMediumOptions();
+});
+
+$("otherSource").addEventListener("input", function() {
+  const normalized = normalizeFreeText(this.value);
+  const words = normalized ? normalized.split("-") : [];
+
+  if (words.length > 2) {
+    $("otherSourceError").textContent = "Custom Source can contain a maximum of 2 words.";
+  } else {
+    $("otherSourceError").textContent = "";
+  }
+  clearFinalResult();
+});
+
+$("otherSource").addEventListener("blur", function() {
+  const normalized = normalizeFreeText(this.value);
+  if (normalized && normalized.split("-").length <= 2) {
+    this.value = normalized;
+  }
 });
 
 $("content").addEventListener("blur", function() {
@@ -654,9 +680,9 @@ $("generateBtn").addEventListener("click", function() {
     $("urlError").textContent = "";
   }
 
-  if (source === "other") {
+  if (source === "others") {
     if (!isValidPhrase(otherSource, 2)) {
-      $("otherSourceError").textContent = "Use up to 2 words. Lowercase and hyphens are applied automatically.";
+      $("otherSourceError").textContent = "Custom Source can contain a maximum of 2 words.";
       valid = false;
     } else {
       $("otherSourceError").textContent = "";
@@ -703,7 +729,7 @@ $("generateBtn").addEventListener("click", function() {
     campaignBase,
     formOnUrl: $("hasForm").value,
     sfdcId: $("sfdcId").value.trim(),
-    assetType: $("assetType").value,
+    assetType: $("assetType").value === "none" ? "" : $("assetType").value,
     geo: $("geo").value,
     fullCampaign,
     finalCampaign: fullCampaign,
